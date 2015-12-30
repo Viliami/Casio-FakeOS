@@ -2,13 +2,11 @@
 /*                                                               */
 /*   CASIO fx-9860G SDK Library                                  */
 /*                                                               */
-/*   File name : FakeOS.c                                        */
+/*   File name : [ProjectName].c                                 */
 /*                                                               */
 /*   Copyright (c) 2006 CASIO COMPUTER CO., LTD.                 */
 /*                                                               */
 /*****************************************************************/
-
-/* AUTHOR: VILIAMI TUANAKI*/
 
 #include "fxlib.h"
 #include "timer.h"
@@ -194,7 +192,7 @@ return ret;
 #define SMALL_TILE_WIDTH 19
 #define SMALL_TILE_HEIGHT 8
 
-unsigned int key;
+unsigned int key, alt_key = 0;
 int selected_x = 0, selected_y = 0, scroll_y = 0, keycode = 0, keycode2 = 0,cursor = TRUE;
 short unused = 0, loading_bar_x = 18;
 int selected_tile[4][4] = {
@@ -851,6 +849,9 @@ void transition_to(State transition_state){
 
 void handleKeys(){
 	key = 9999;
+	if(alt_key == KEY_CTRL_SHIFT){
+		state = OFF_LOGO;
+	}
 	if(state != RUNMAT){
 		Bkey_GetKeyWait(&keycode, &keycode2, KEYWAIT_HALTON_TIMEROFF, 0,1,&unused) ;
 	}else  if(state == RUNMAT){
@@ -864,31 +865,48 @@ void handleKeys(){
 
 	if(keycode ==3 && keycode2 == 8 ){
 		key = KEY_CTRL_DOWN;
+		alt_key = 0;
 	}else if(keycode == 2 && keycode2 == 8){
 		key = KEY_CTRL_RIGHT;
+		alt_key = 0;
 	}else if(keycode == 2 && keycode2 == 9){
 		key = KEY_CTRL_UP;
+		alt_key = 0;
 	}else if(keycode == 3 && keycode2 == 9){
 		key = KEY_CTRL_LEFT;
+		alt_key = 0;
 	}else if(keycode == 4 && keycode2 == 9){
 		key = KEY_CTRL_MENU;
+		alt_key = 0;
 	}else if(keycode == 3 && keycode2 == 2){
 		key = KEY_CTRL_EXE;
+		alt_key = 0;
 	}else if(keycode == 4 && keycode2 == 8){
 		key = KEY_CTRL_EXIT;
+		alt_key = 0;
+	}else if(keycode == 7 && keycode2 == 9){
+		alt_key = KEY_CTRL_SHIFT;
+	}else if(keycode == 7 && keycode2 == 8){
+		alt_key = KEY_CTRL_ALPHA;
 	}else if(keycode2 == 10){
-		if(keycode == 7)
+		if(keycode == 7){
 			key = KEY_CTRL_F1;
-		if(keycode == 6)
+			alt_key = 0;
+		}else if(keycode == 6){
 			key = KEY_CTRL_F2;
-		if(keycode == 5)
+			alt_key = 0;
+		}else if(keycode == 5){
 			key = KEY_CTRL_F3;
-		if(keycode == 4)
+			alt_key = 0;
+		}else if(keycode == 4){
 			key = KEY_CTRL_F4;
-		if(keycode == 3)
+			alt_key = 0;
+		}else if(keycode == 3){
 			key = KEY_CTRL_F5;
-		if(keycode == 2){
+			alt_key = 0;
+		}else if(keycode == 2){
 			key = KEY_CTRL_F6;
+			alt_key = 0;
 		}
 	}
 
@@ -1148,6 +1166,7 @@ void draw_popup_box(char* title){ //draws popup box
 }
 
 void draw_memory(){
+	
 }
 
 void draw_loading_bar(){
@@ -1160,9 +1179,37 @@ void draw_loading_bar(){
 		Bdisp_DrawLineVRAM(i, 31, i, 41);
 	}
 	if(loading_bar_x <= 106){
+		Bdisp_SetPoint_VRAM(124,0,1);
+		Bdisp_SetPoint_VRAM(125,0,1);
+		Bdisp_SetPoint_VRAM(126,0,1);
+		Bdisp_SetPoint_VRAM(127,0,1);
+		Bdisp_SetPoint_VRAM(124,1,1);
+		Bdisp_SetPoint_VRAM(125,1,1);
+		Bdisp_SetPoint_VRAM(126,1,1);
+		Bdisp_SetPoint_VRAM(127,1,1);
+		Bdisp_SetPoint_VRAM(124,2,1);
+		Bdisp_SetPoint_VRAM(125,2,1);
+		Bdisp_SetPoint_VRAM(126,2,1);
+		Bdisp_SetPoint_VRAM(127,2,1);
+		Bdisp_SetPoint_VRAM(124,3,1);
+		Bdisp_SetPoint_VRAM(125,3,1);
+		Bdisp_SetPoint_VRAM(126,3,1);
+		Bdisp_SetPoint_VRAM(127,3,1);
 		loading_bar_x++;
 	}else{
 		KillTimer(ID_USER_TIMER2);
+		loading_bar_x = 19;
+		clear_box(popup.left ,popup.top, popup.right, popup.bottom);
+		draw_box_border();
+		clear_box(popup.left ,popup.top, popup.right, popup.bottom);
+		draw_box_border();
+		locate(8,2);
+		Print("Reset!");
+		locate(4,3);
+		Print("Initialize All");
+		locate(6,6);
+		Print("Press:[EXIT]");
+
 	}
 	Bdisp_PutDisp_DD();
 }
@@ -1174,7 +1221,6 @@ void draw_loading_box(){
 	locate(3,3);
 	Print("One Moment Please");
 	SetTimer(ID_USER_TIMER2,100,draw_loading_bar);
-	loading_bar_x = 19;
 }
 
 int AddIn_main(int isAppli, unsigned short OptionNum){
@@ -1316,3 +1362,4 @@ int InitializeSystem(int isAppli, unsigned short OptionNum)
 }
 
 #pragma section
+
