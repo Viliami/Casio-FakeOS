@@ -2,11 +2,17 @@
 /*                                                               */
 /*   CASIO fx-9860G SDK Library                                  */
 /*                                                               */
-/*   File name : [ProjectName].c                                 */
+/*   File name : FAKEOS.c                                 */
 /*                                                               */
-/*   Copyright (c) 2006 CASIO COMPUTER CO., LTD.                 */
+/*   Copyright (c) 2016 CASIO COMPUTER CO., LTD.                 */
 /*                                                               */
 /*****************************************************************/
+
+/*****************************************************************
+
+AUTHOR: VILIAMI
+
+******************************************************************/
 
 #include "fxlib.h"
 #include "timer.h"
@@ -194,7 +200,7 @@ return ret;
 
 unsigned int key, alt_key = 0;
 int selected_x = 0, selected_y = 0, scroll_y = 0, keycode = 0, keycode2 = 0,cursor = TRUE;
-short unused = 0, loading_bar_x = 18;
+short unused = 0, loading_bar_x = 19;
 int selected_tile[4][4] = {
 {1,0,0,0},
 {0,0,0,0},
@@ -202,11 +208,12 @@ int selected_tile[4][4] = {
 {0,0,0,9}
 };
 DISPBOX popup;
-typedef enum {MENU, TRANSITION ,RUNMAT, STAT, EACT, GRAPH, SSHT, DYNA, TABLE, RECUR, CONICS, EQUA, PRGM, TVM, LINK, MEMORY, SYSTEM,SYSTEM_CONTRAST,SYSTEM_APO,SYSTEM_VER,SYSTEM_RSET,
+typedef enum {MENU ,RUNMAT, STAT, EACT, GRAPH, SSHT, DYNA, TABLE, RECUR, CONICS, EQUA, PRGM, TVM, LINK, MEMORY, SYSTEM,SYSTEM_CONTRAST,SYSTEM_APO,SYSTEM_VER,SYSTEM_RSET,
 SYSTEM_RSET_STUP,SYSTEM_RSET_MAIN,SYSTEM_RSET_ADD,SYSTEM_RSET_SMEM, SYSTEM_RSET_AS, SYSTEM_RSET_2, SYSTEM_RSET2_MS, SYSTEM_RSET2_ALL, SYSTEM_RSET2_MS_YES, SYSTEM_RSET2_ALL_YES , OFF_LOGO, OFF, ONETHREEAC_RESET} State;
+typedef enum{false, true} bool;
+bool block_input = false;
 State state = MENU;
 State prevState = MENU;
-
 int cas_title[7][128] = {
 {1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,1,1,1,1,1,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1},
 {0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1,1,0,1,1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,1,0,1,1,0,1,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0},
@@ -728,6 +735,38 @@ int casio_logo_1[13] = {
 1073274894
 };
 
+int casio_logo_2[13] = {
+2147017215,
+4294763519,
+4294764543,
+3759990656,
+3758155520,
+4294502144,
+4294764288,
+2147280640,
+1894144,
+3759990656,
+4294764543,
+4294763519,
+2147017215
+};
+
+int casio_logo_3[13] = {
+3072,
+3584,
+3840,
+3840,
+1792,
+1820,
+1826,
+1881,
+1877,
+3929,
+3925,
+3618,
+3100
+};
+
 void draw_header(){
 	int x,y;
 	for(y = 0; y < 7; y++){
@@ -752,7 +791,7 @@ void draw_array(int pixel_array[19][30], int startX, int startY){
 void draw_int_array(int pixel_array[SMALL_TILE_WIDTH],int startX,int startY,int selected){
 	int x,y,number;
 	if(startY < 7 || startY >= 63 ){
-		return;	
+		return;
 	}
 	for(y = 0; y < TILE_HEIGHT; y++){
 		number = pixel_array[y];
@@ -770,10 +809,10 @@ void draw_pixel_array(int pixel_array[13], int startX, int startY){
 	int x,y,number;
 	for(y = 0; y < 13; y++){
 		number = pixel_array[y];
-		for(x = 0;  x < 64; x++){
+		for(x = 0;  x < 32; x++){
 			int bit = number & 1;
 			if(bit == 1)
-				Bdisp_SetPoint_VRAM(-x+(TILE_WIDTH-1)+startX,y+startY,1);
+				Bdisp_SetPoint_VRAM(-x+(32-1)+startX,y+startY,1);
 		    	number = number >> 1;
 		}
 	}
@@ -840,30 +879,29 @@ void draw_menu(){
 	draw_arrows();
 }
 
-void transition_to(State transition_state){
-	if(transition_state == MENU){
-		draw_menu();
-		state = TRANSITION;
-	}
+void power_off(){
+	state = OFF;
+	Bdisp_AllClr_DDVRAM();
+	KillTimer(ID_USER_TIMER1);
 }
 
 void handleKeys(){
 	key = 9999;
-	if(alt_key == KEY_CTRL_SHIFT){
-		state = OFF_LOGO;
-	}
-	if(state != RUNMAT){
-		Bkey_GetKeyWait(&keycode, &keycode2, KEYWAIT_HALTON_TIMEROFF, 0,1,&unused) ;
-	}else  if(state == RUNMAT){
-		if(IsKeyDown(KEY_CTRL_MENU)){
-			state = MENU;
-			KillTimer(ID_USER_TIMER1);
-			transition_to(MENU);
-			return;
+	
+	Bkey_GetKeyWait(&keycode, &keycode2, KEYWAIT_HALTON_TIMEROFF, 0,1,&unused) ;
+	
+	if(state == OFF){
+		if(keycode == 1 && keycode2 == 1){
+			block_input = false;
 		}
 	}
 
-	if(keycode ==3 && keycode2 == 8 ){
+	if(block_input)
+		return;
+
+	if(keycode == 1 && keycode2 == 1){
+		key = KEY_CTRL_AC;
+	}else if(keycode ==3 && keycode2 == 8 ){
 		key = KEY_CTRL_DOWN;
 		alt_key = 0;
 	}else if(keycode == 2 && keycode2 == 8){
@@ -971,12 +1009,8 @@ void handleKeys(){
 			}
 			break;
 		case KEY_CTRL_MENU:
-			if(state != MENU){
-				if(state != TRANSITION){
-					prevState = state;
-				}else{
-					prevState = RUNMAT;
-				}
+			if(state != MENU && state != SYSTEM_RSET2_ALL_YES){
+				prevState = state;
 				state = MENU;
 				KillTimer(ID_USER_TIMER1);
 			}else if(state == MENU){
@@ -991,6 +1025,7 @@ void handleKeys(){
 				state = SYSTEM_RSET2_MS;
 			}else if(state == SYSTEM_RSET2_ALL){
 				state =SYSTEM_RSET2_ALL_YES;
+				loading_bar_x = 19;
 			}
 			break;
 		case KEY_CTRL_F2:
@@ -1033,6 +1068,22 @@ void handleKeys(){
 				state = SYSTEM_RSET;
 			if(state == SYSTEM_RSET2_MS || state == SYSTEM_RSET2_ALL)
 				state = SYSTEM_RSET_2;
+			if(state == SYSTEM_RSET2_ALL_YES){
+				state = OFF;
+			}
+			break;
+		case KEY_CTRL_AC:
+			if(alt_key == KEY_CTRL_SHIFT){
+				prevState = state;
+				state = OFF_LOGO;
+				alt_key = 0;
+				block_input = true;
+				KillTimer(ID_USER_TIMER1);
+				SetTimer(ID_USER_TIMER1, 1500,power_off);
+			}else if(state == OFF){
+				state = prevState;
+				block_input = false;
+			}
 			break;
 	}
 	selected_tile[selected_y][selected_x] = 1; //update selected_tile array
@@ -1047,6 +1098,7 @@ void draw_bottom_button(int pixel_array[8], int f_number){
 
 void draw_cursor(){
 	Bdisp_AllClr_DDVRAM();
+	draw_bottom_button(mat,1);
 	if(cursor){
 		Bdisp_DrawLineVRAM(0,0,0,7);
 		Bdisp_DrawLineVRAM(1,0,1,7);
@@ -1054,6 +1106,7 @@ void draw_cursor(){
 	}else{
 		cursor = TRUE;
 	}
+	Bdisp_PutDisp_DD();
 }
 
 void draw_runmat(){
@@ -1171,6 +1224,13 @@ void draw_memory(){
 
 void draw_loading_bar(){
 	int i = 0;
+	if(state == SYSTEM_RSET2_ALL_YES){
+		draw_rset_2();
+	}
+	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
+	draw_box_border();
+	locate(3,3);
+	Print("One Moment Please");
 	Bdisp_DrawLineVRAM(18,31,107,31); //top horizontal line
 	Bdisp_DrawLineVRAM(18,41,107,41); //bottom horizontal line
 	Bdisp_DrawLineVRAM(18,31,18,41); //left vertical line
@@ -1179,6 +1239,7 @@ void draw_loading_bar(){
 		Bdisp_DrawLineVRAM(i, 31, i, 41);
 	}
 	if(loading_bar_x <= 106){
+		block_input = true;
 		Bdisp_SetPoint_VRAM(124,0,1);
 		Bdisp_SetPoint_VRAM(125,0,1);
 		Bdisp_SetPoint_VRAM(126,0,1);
@@ -1197,8 +1258,11 @@ void draw_loading_bar(){
 		Bdisp_SetPoint_VRAM(127,3,1);
 		loading_bar_x++;
 	}else{
-		KillTimer(ID_USER_TIMER2);
-		loading_bar_x = 19;
+		KillTimer(ID_USER_TIMER1);
+		block_input = false;
+		if(state == SYSTEM_RSET2_ALL_YES){
+			draw_rset_2();
+		}
 		clear_box(popup.left ,popup.top, popup.right, popup.bottom);
 		draw_box_border();
 		clear_box(popup.left ,popup.top, popup.right, popup.bottom);
@@ -1206,21 +1270,24 @@ void draw_loading_bar(){
 		locate(8,2);
 		Print("Reset!");
 		locate(4,3);
-		Print("Initialize All");
+		if(state == SYSTEM_RSET2_ALL_YES){
+			Print("Initialize All");
+		}
 		locate(6,6);
 		Print("Press:[EXIT]");
-
 	}
 	Bdisp_PutDisp_DD();
 }
 
 void draw_loading_box(){
-	draw_rset_2();
+	if(state == SYSTEM_RSET2_ALL_YES){
+		draw_rset_2();
+	}
 	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
 	draw_box_border();
 	locate(3,3);
 	Print("One Moment Please");
-	SetTimer(ID_USER_TIMER2,100,draw_loading_bar);
+	SetTimer(ID_USER_TIMER1,100,draw_loading_bar);
 }
 
 int AddIn_main(int isAppli, unsigned short OptionNum){
@@ -1311,10 +1378,30 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 				
 				break;
 			case SYSTEM_RSET2_ALL_YES:
-				draw_loading_box("Initialize All");
+				if(loading_bar_x == 19){
+					draw_loading_box();
+				}else if(loading_bar_x == 107){
+					if(state == SYSTEM_RSET2_ALL_YES){
+						draw_rset_2();
+					}
+					clear_box(popup.left ,popup.top, popup.right, popup.bottom);
+					draw_box_border();
+					clear_box(popup.left ,popup.top, popup.right, popup.bottom);
+					draw_box_border();
+					locate(8,2);
+					Print("Reset!");
+					locate(4,3);
+					if(state == SYSTEM_RSET2_ALL_YES){
+						Print("Initialize All");
+					}
+					locate(6,6);
+					Print("Press:[EXIT]");
+				}
 				break;
 			case OFF_LOGO:
 				draw_pixel_array(casio_logo_1, 29,26);
+				draw_pixel_array(casio_logo_2, 61,26);
+				draw_pixel_array(casio_logo_3, 73,26);
 				break;
 			case OFF:
 				break;
