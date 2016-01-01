@@ -208,7 +208,7 @@ int selected_tile[4][4] = {
 {0,0,0,9}
 };
 DISPBOX popup;
-typedef enum {MENU ,RUNMAT, STAT, EACT, GRAPH, SSHT, DYNA, TABLE, RECUR, CONICS, EQUA, PRGM, TVM, LINK, MEMORY, SYSTEM,SYSTEM_CONTRAST,SYSTEM_APO,SYSTEM_VER,SYSTEM_RSET,
+typedef enum {MENU ,RUNMAT, STAT, EACT, GRAPH, SSHT, DYNA, TABLE, RECUR, CONICS, EQUA, PRGM, TVM, LINK, MEMORY, SYSTEM,SYSTEM_CONTRAST,SYSTEM_PP,SYSTEM_LANG, SYSTEM_VER,SYSTEM_RSET,
 SYSTEM_RSET_STUP,SYSTEM_RSET_MAIN,SYSTEM_RSET_ADD,SYSTEM_RSET_SMEM, SYSTEM_RSET_AS, SYSTEM_RSET_2, SYSTEM_RSET2_MS, SYSTEM_RSET2_ALL, SYSTEM_RSET2_MS_YES, SYSTEM_RSET2_ALL_YES , OFF_LOGO, OFF, ONETHREEAC_RESET} State;
 typedef enum{false, true} bool;
 bool block_input = false;
@@ -885,9 +885,48 @@ void power_off(){
 	KillTimer(ID_USER_TIMER1);
 }
 
+void power_on(){
+	state = prevState;
+	block_input = false;
+	KillTimer(ID_USER_TIMER1);
+	KillTimer(ID_USER_TIMER2);
+	Bdisp_AllClr_DDVRAM();
+	if(state == MENU){
+		draw_menu();
+		Bdisp_PutDisp_DD();
+	}
+}
+
+void draw_loading_square(){
+	Bdisp_SetPoint_VRAM(124,0,1);
+	Bdisp_SetPoint_VRAM(125,0,1);
+	Bdisp_SetPoint_VRAM(126,0,1);
+	Bdisp_SetPoint_VRAM(127,0,1);
+	Bdisp_SetPoint_VRAM(124,1,1);
+	Bdisp_SetPoint_VRAM(125,1,1);
+	Bdisp_SetPoint_VRAM(126,1,1);
+	Bdisp_SetPoint_VRAM(127,1,1);
+	Bdisp_SetPoint_VRAM(124,2,1);
+	Bdisp_SetPoint_VRAM(125,2,1);
+	Bdisp_SetPoint_VRAM(126,2,1);
+	Bdisp_SetPoint_VRAM(127,2,1);
+	Bdisp_SetPoint_VRAM(124,3,1);
+	Bdisp_SetPoint_VRAM(125,3,1);
+	Bdisp_SetPoint_VRAM(126,3,1);
+	Bdisp_SetPoint_VRAM(127,3,1);
+	Bdisp_PutDisp_DD();
+}
+
 void handleKeys(){
 	key = 9999;
 	
+	if(state == OFF){
+		if(IsKeyDown(KEY_CHAR_1) && IsKeyDown(KEY_CHAR_3)){
+			draw_menu();
+			Bdisp_PutDisp_DD();
+		}
+	}
+
 	Bkey_GetKeyWait(&keycode, &keycode2, KEYWAIT_HALTON_TIMEROFF, 0,1,&unused) ;
 	
 	if(state == OFF){
@@ -968,6 +1007,10 @@ void handleKeys(){
 					if(selected_y == 3 && scroll_y == 0){
 						scroll_y = TILE_HEIGHT;
 					}
+				}else if(selected_y == 2 && selected_x == 3){
+					selected_y++;
+					selected_x = 2;
+					scroll_y = TILE_HEIGHT;
 				}
 			}
 			break;
@@ -992,8 +1035,9 @@ void handleKeys(){
 				}else if(selected_y < 3){
 					selected_x = 0;
 					selected_y++;
-					if(selected_y == 3 && scroll_y == 0)
+					if(selected_y == 3 && scroll_y == 0){
 						scroll_y = TILE_HEIGHT;
+					}
 				}
 			}
 			break;
@@ -1026,28 +1070,44 @@ void handleKeys(){
 			}else if(state == SYSTEM_RSET2_ALL){
 				state =SYSTEM_RSET2_ALL_YES;
 				loading_bar_x = 19;
+			}else if(state == SYSTEM){
+				Bdisp_AllClr_DDVRAM();
+				state = SYSTEM_CONTRAST;
 			}
 			break;
 		case KEY_CTRL_F2:
-			if(state == SYSTEM_RSET)
+			if(state == SYSTEM_RSET){
 				state = SYSTEM_RSET_MAIN;
-			if(state == SYSTEM_RSET_2)
+			}else if(state == SYSTEM_RSET_2){
 				state = SYSTEM_RSET2_ALL;
+			}else if(state == SYSTEM){
+				Bdisp_AllClr_DDVRAM();
+				state = SYSTEM_PP;
+			}
 			break;
 		case KEY_CTRL_F3:
-			if(state == SYSTEM_RSET)
+			if(state == SYSTEM_RSET){
 				state = SYSTEM_RSET_ADD;
+			}else if(state == SYSTEM){
+				Bdisp_AllClr_DDVRAM();
+				state = SYSTEM_LANG;
+			}
 			break;
 		case KEY_CTRL_F4:
-			if(state == SYSTEM_RSET)
+			if(state == SYSTEM_RSET){
 				state = SYSTEM_RSET_SMEM;
+			}else if(state == SYSTEM){
+				Bdisp_AllClr_DDVRAM();
+				state = SYSTEM_VER;
+			}
 			break;
 		case KEY_CTRL_F5:
 			if(state == SYSTEM){
 				Bdisp_AllClr_DDVRAM();
 				state = SYSTEM_RSET;
-			}else if(state == SYSTEM_RSET)
+			}else if(state == SYSTEM_RSET){
 				state = SYSTEM_RSET_AS;
+			}
 			break;
 		case KEY_CTRL_F6:
 			if(state == SYSTEM_RSET || state == SYSTEM_RSET_2){
@@ -1064,12 +1124,17 @@ void handleKeys(){
 				state = SYSTEM_RSET_2;
 			break;
 		case KEY_CTRL_EXIT:
-			if(state == SYSTEM_RSET_STUP || state == SYSTEM_RSET_MAIN || state == SYSTEM_RSET_ADD || state == SYSTEM_RSET_SMEM || state == SYSTEM_RSET_AS)
+			if(state == SYSTEM_RSET_STUP || state == SYSTEM_RSET_MAIN || state == SYSTEM_RSET_ADD || state == SYSTEM_RSET_SMEM || state == SYSTEM_RSET_AS){
 				state = SYSTEM_RSET;
-			if(state == SYSTEM_RSET2_MS || state == SYSTEM_RSET2_ALL)
+			}else if(state == SYSTEM_RSET2_MS || state == SYSTEM_RSET2_ALL){
 				state = SYSTEM_RSET_2;
-			if(state == SYSTEM_RSET2_ALL_YES){
-				state = OFF;
+			}else if(state == SYSTEM_RSET2_ALL_YES){
+				prevState = MENU;
+				power_off();
+				SetTimer(ID_USER_TIMER1, 1500, draw_loading_square);
+				SetTimer(ID_USER_TIMER2, 4000, power_on);
+			}else if(state == SYSTEM_RSET || state == SYSTEM_RSET_2 || state == SYSTEM_CONTRAST || state == SYSTEM_PP || state == SYSTEM_LANG || state == SYSTEM_VER){
+				state = SYSTEM;
 			}
 			break;
 		case KEY_CTRL_AC:
@@ -1079,10 +1144,9 @@ void handleKeys(){
 				alt_key = 0;
 				block_input = true;
 				KillTimer(ID_USER_TIMER1);
-				SetTimer(ID_USER_TIMER1, 1500,power_off);
+				SetTimer(ID_USER_TIMER1,1500,power_off);
 			}else if(state == OFF){
-				state = prevState;
-				block_input = false;
+				power_on();
 			}
 			break;
 	}
@@ -1240,22 +1304,7 @@ void draw_loading_bar(){
 	}
 	if(loading_bar_x <= 106){
 		block_input = true;
-		Bdisp_SetPoint_VRAM(124,0,1);
-		Bdisp_SetPoint_VRAM(125,0,1);
-		Bdisp_SetPoint_VRAM(126,0,1);
-		Bdisp_SetPoint_VRAM(127,0,1);
-		Bdisp_SetPoint_VRAM(124,1,1);
-		Bdisp_SetPoint_VRAM(125,1,1);
-		Bdisp_SetPoint_VRAM(126,1,1);
-		Bdisp_SetPoint_VRAM(127,1,1);
-		Bdisp_SetPoint_VRAM(124,2,1);
-		Bdisp_SetPoint_VRAM(125,2,1);
-		Bdisp_SetPoint_VRAM(126,2,1);
-		Bdisp_SetPoint_VRAM(127,2,1);
-		Bdisp_SetPoint_VRAM(124,3,1);
-		Bdisp_SetPoint_VRAM(125,3,1);
-		Bdisp_SetPoint_VRAM(126,3,1);
-		Bdisp_SetPoint_VRAM(127,3,1);
+		draw_loading_square();
 		loading_bar_x++;
 	}else{
 		KillTimer(ID_USER_TIMER1);
@@ -1277,6 +1326,33 @@ void draw_loading_bar(){
 		Print("Press:[EXIT]");
 	}
 	Bdisp_PutDisp_DD();
+}
+
+void draw_sys_contrast(){
+	unsigned char triangle_arrow[5] = {'[',0xE6,0x9A,']',0};
+	Bdisp_DrawLineVRAM(2, 56, 2, 63);
+	Bdisp_DrawLineVRAM(2, 56, 21, 56); //actual border is Bdisp_DrawLineVRAM(2, 56, 21, 56)
+	PrintMini(4,58,"INIT",MINI_OVER);
+	locate(1,1);
+	Print("Contrast");
+	locate(2,3);
+	Print(triangle_arrow);
+	locate(5,3);
+	Print("Key");
+	locate(15,3);
+	Print("[ ]Key");\
+}
+
+void draw_sys_pp(){
+
+}
+
+void draw_sys_lang(){
+
+}
+
+void draw_sys_ver(){
+
 }
 
 void draw_loading_box(){
@@ -1339,6 +1415,18 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 				break;
 			case SYSTEM:
 				draw_system();
+				break;
+			case SYSTEM_CONTRAST:
+				draw_sys_contrast();
+				break;
+			case SYSTEM_PP:
+				draw_sys_pp();
+				break;
+			case SYSTEM_LANG:
+				draw_sys_lang();
+				break;
+			case SYSTEM_VER:
+				draw_sys_ver();
 				break;
 			case SYSTEM_RSET:
 				draw_rset();
