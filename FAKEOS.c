@@ -209,7 +209,7 @@ int selected_tile[4][4] = {
 };
 DISPBOX popup;
 typedef enum {MENU ,RUNMAT, STAT, EACT, GRAPH, SSHT, DYNA, TABLE, RECUR, CONICS, EQUA, PRGM, TVM, LINK, MEMORY, SYSTEM,SYSTEM_CONTRAST,SYSTEM_PP,SYSTEM_LANG, SYSTEM_VER,SYSTEM_RSET,
-SYSTEM_RSET_STUP,SYSTEM_RSET_MAIN,SYSTEM_RSET_ADD,SYSTEM_RSET_SMEM, SYSTEM_RSET_AS, SYSTEM_RSET_2, SYSTEM_RSET2_MS, SYSTEM_RSET2_ALL, SYSTEM_RSET2_MS_YES, SYSTEM_RSET2_ALL_YES , OFF_LOGO, OFF, ONETHREEAC_RESET} State;
+SYSTEM_RSET_STUP,SYSTEM_RSET_MAIN,SYSTEM_RSET_ADD,SYSTEM_RSET_SMEM, SYSTEM_RSET_AS, SYSTEM_RSET_2, SYSTEM_RSET2_MS, SYSTEM_RSET2_ALL, SYSTEM_RSET_STUP_YES, SYSTEM_RSET_MAIN_YES, SYSTEM_RSET_ADD_YES, SYSTEM_RSET_SMEM_YES, SYSTEM_RSET_AS_YES, SYSTEM_RSET2_MS_YES, SYSTEM_RSET2_ALL_YES , OFF_LOGO, OFF, ONETHREEAC_RESET} State;
 typedef enum{false, true} bool;
 bool block_input = false;
 State state = MENU;
@@ -509,6 +509,7 @@ int link[19] = {
 67,
 536870911
 };
+
 
 int memory[19] = {
 0,
@@ -1073,6 +1074,18 @@ void handleKeys(){
 			}else if(state == SYSTEM){
 				Bdisp_AllClr_DDVRAM();
 				state = SYSTEM_CONTRAST;
+			}else if(state == SYSTEM_RSET_STUP){
+				state = SYSTEM_RSET_STUP_YES;
+			}else if(state == SYSTEM_RSET_MAIN){
+				state = SYSTEM_RSET_MAIN_YES;
+				loading_bar_x = 99;
+			}else if(state == SYSTEM_RSET_ADD){
+				state = SYSTEM_RSET_ADD_YES;
+				loading_bar_x = 99;
+			}else if(state == SYSTEM_RSET_SMEM){
+				state = SYSTEM_RSET_SMEM_YES;
+			}else if(state == SYSTEM_RSET_AS){
+				state = SYSTEM_RSET_AS_YES;
 			}
 			break;
 		case KEY_CTRL_F2:
@@ -1135,6 +1148,19 @@ void handleKeys(){
 				SetTimer(ID_USER_TIMER2, 4000, power_on);
 			}else if(state == SYSTEM_RSET || state == SYSTEM_RSET_2 || state == SYSTEM_CONTRAST || state == SYSTEM_PP || state == SYSTEM_LANG || state == SYSTEM_VER){
 				state = SYSTEM;
+			}else if(state == SYSTEM_RSET_STUP_YES){
+				state = SYSTEM_RSET;
+			}else if(state == SYSTEM_RSET_MAIN_YES){
+				state = SYSTEM_RSET;
+			}else if(state == SYSTEM_RSET_ADD_YES){
+				state = SYSTEM_RSET;
+				loading_bar_x = 19;
+			}else if(state == SYSTEM_RSET_SMEM_YES){
+				state = SYSTEM_RSET;
+			}else if(state == SYSTEM_RSET_AS_YES){
+				state = SYSTEM_RSET;
+			}else if(state == SYSTEM_RSET2_MS){
+				state = SYSTEM_RSET_2;
 			}
 			break;
 		case KEY_CTRL_AC:
@@ -1244,6 +1270,8 @@ void draw_rset_2(){
 	Print("F1:Main&Storage");
 	locate(1,3);
 	Print("F2:Initialize All");
+	locate(1,7);
+	Print("F6:Next Page");
 	draw_bottom_button(m_s,1);
 	draw_bottom_button(all,2);
 	draw_bottom_button(r_arrow,6);
@@ -1290,6 +1318,8 @@ void draw_loading_bar(){
 	int i = 0;
 	if(state == SYSTEM_RSET2_ALL_YES){
 		draw_rset_2();
+	}else if(state == SYSTEM_RSET_ADD_YES || state == SYSTEM_RSET_AS_YES){
+		draw_rset();
 	}
 	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
 	draw_box_border();
@@ -1305,12 +1335,18 @@ void draw_loading_bar(){
 	if(loading_bar_x <= 106){
 		block_input = true;
 		draw_loading_square();
-		loading_bar_x++;
+		if(state == SYSTEM_RSET_ADD_YES){
+			loading_bar_x = 107;
+		}else{
+			loading_bar_x++;
+		}
 	}else{
 		KillTimer(ID_USER_TIMER1);
 		block_input = false;
 		if(state == SYSTEM_RSET2_ALL_YES){
 			draw_rset_2();
+		}else if(state == SYSTEM_RSET_ADD_YES || state == SYSTEM_RSET_AS_YES){
+			draw_rset();
 		}
 		clear_box(popup.left ,popup.top, popup.right, popup.bottom);
 		draw_box_border();
@@ -1321,6 +1357,12 @@ void draw_loading_bar(){
 		locate(4,3);
 		if(state == SYSTEM_RSET2_ALL_YES){
 			Print("Initialize All");
+		}else if(state == SYSTEM_RSET_ADD_YES){
+			Print("Add-In");
+		}else if(state == SYSTEM_RSET_AS_YES){
+			Print("Add-In");
+			locate(4,4);
+			Print("Storage Memory");
 		}
 		locate(6,6);
 		Print("Press:[EXIT]");
@@ -1329,18 +1371,26 @@ void draw_loading_bar(){
 }
 
 void draw_sys_contrast(){
-	unsigned char triangle_arrow[5] = {'[',0xE6,0x9A,']',0};
+	unsigned char left_arrow[5] = {'[',0xE6,0x9A,']',0};
+	unsigned char right_arrow[5] = {'[',0xE6,0x9B,']',0};
 	Bdisp_DrawLineVRAM(2, 56, 2, 63);
 	Bdisp_DrawLineVRAM(2, 56, 21, 56); //actual border is Bdisp_DrawLineVRAM(2, 56, 21, 56)
 	PrintMini(4,58,"INIT",MINI_OVER);
 	locate(1,1);
 	Print("Contrast");
 	locate(2,3);
-	Print(triangle_arrow);
+	Print(left_arrow);
 	locate(5,3);
 	Print("Key");
+	locate(1,5);
+	Print("Light");
+
 	locate(15,3);
-	Print("[ ]Key");\
+	Print(right_arrow);
+	locate(18,3);
+	Print("Key");
+	locate(17,5);
+	Print("Dark");
 }
 
 void draw_sys_pp(){
@@ -1358,12 +1408,35 @@ void draw_sys_ver(){
 void draw_loading_box(){
 	if(state == SYSTEM_RSET2_ALL_YES){
 		draw_rset_2();
+	}else if(state == SYSTEM_RSET_ADD_YES || state == SYSTEM_RSET_AS_YES){
+		draw_rset();
 	}
 	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
 	draw_box_border();
 	locate(3,3);
 	Print("One Moment Please");
 	SetTimer(ID_USER_TIMER1,100,draw_loading_bar);
+}
+
+void draw_reset_confirmed(unsigned char* text){
+	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
+	draw_box_border();
+	locate(8,2);
+	Print("Reset!");
+	locate(4,3);
+	Print(text);
+	locate(6,6);
+	Print("Press:[EXIT]");
+}
+
+void draw_rset_main(){
+	Bdisp_AllClr_DDVRAM();
+	draw_rset();
+	draw_reset_confirmed("Main Memories");
+	KillTimer(ID_USER_TIMER1);
+	block_input = false;
+	loading_bar_x = 19;
+	Bdisp_PutDisp_DD();
 }
 
 int AddIn_main(int isAppli, unsigned short OptionNum){
@@ -1462,8 +1535,42 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 				draw_rset_2();
 				draw_popup_box("Initialize All");
 				break;
+			case SYSTEM_RSET_STUP_YES:
+				draw_rset();
+				draw_reset_confirmed("Setup Data");
+				break;
+			case SYSTEM_RSET_MAIN_YES:
+				draw_rset();
+				if(loading_bar_x == 99){
+					draw_popup_box("Main Memories");
+					draw_loading_square();
+					block_input = true;
+					SetTimer(ID_USER_TIMER1, 2500, draw_rset_main);
+				}else if(loading_bar_x == 19){
+					draw_reset_confirmed("Main Memories");
+				}
+				break;
+			case SYSTEM_RSET_ADD_YES:
+				draw_rset();
+				if(loading_bar_x == 99){
+					block_input = true;
+					draw_loading_square();
+					draw_loading_box();
+				}else if(loading_bar_x == 107){
+					draw_reset_confirmed("Add-In");
+				}
+				break;
+			case SYSTEM_RSET_SMEM_YES:
+				draw_rset();
+				draw_reset_confirmed("Storage Memories");
+				break;
+			case SYSTEM_RSET_AS_YES:
+				draw_rset();
+				draw_reset_confirmed("Add-In");
+				break;
 			case SYSTEM_RSET2_MS_YES:
-				
+				draw_rset_2();
+				draw_reset_confirmed("Main Memories");
 				break;
 			case SYSTEM_RSET2_ALL_YES:
 				if(loading_bar_x == 19){
@@ -1472,8 +1579,6 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 					if(state == SYSTEM_RSET2_ALL_YES){
 						draw_rset_2();
 					}
-					clear_box(popup.left ,popup.top, popup.right, popup.bottom);
-					draw_box_border();
 					clear_box(popup.left ,popup.top, popup.right, popup.bottom);
 					draw_box_border();
 					locate(8,2);
@@ -1537,4 +1642,3 @@ int InitializeSystem(int isAppli, unsigned short OptionNum)
 }
 
 #pragma section
-
