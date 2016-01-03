@@ -18,6 +18,7 @@ AUTHOR: VILIAMI
 #include "timer.h"
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 //****************************************************************************
 //  AddIn_main (Sample program main function)
@@ -1071,6 +1072,9 @@ void handleKeys(){
 			}else if(state == SYSTEM_RSET2_ALL){
 				state =SYSTEM_RSET2_ALL_YES;
 				loading_bar_x = 19;
+			}else if(state == SYSTEM_RSET2_MS){
+				state = SYSTEM_RSET2_MS_YES;
+				loading_bar_x = 99;
 			}else if(state == SYSTEM){
 				Bdisp_AllClr_DDVRAM();
 				state = SYSTEM_CONTRAST;
@@ -1084,8 +1088,10 @@ void handleKeys(){
 				loading_bar_x = 99;
 			}else if(state == SYSTEM_RSET_SMEM){
 				state = SYSTEM_RSET_SMEM_YES;
+				loading_bar_x = 99;
 			}else if(state == SYSTEM_RSET_AS){
 				state = SYSTEM_RSET_AS_YES;
+				loading_bar_x = 19;
 			}
 			break;
 		case KEY_CTRL_F2:
@@ -1157,10 +1163,12 @@ void handleKeys(){
 				loading_bar_x = 19;
 			}else if(state == SYSTEM_RSET_SMEM_YES){
 				state = SYSTEM_RSET;
+				loading_bar_x = 19;
 			}else if(state == SYSTEM_RSET_AS_YES){
 				state = SYSTEM_RSET;
-			}else if(state == SYSTEM_RSET2_MS){
+			}else if(state == SYSTEM_RSET2_MS_YES){
 				state = SYSTEM_RSET_2;
+				loading_bar_x = 19;
 			}
 			break;
 		case KEY_CTRL_AC:
@@ -1314,11 +1322,19 @@ void draw_memory(){
 	
 }
 
+int round(float number){
+	if((number-(floor(number))) >= 0.5){
+		return ceil(number);
+	}else{
+		return floor(number);
+	}
+}
+
 void draw_loading_bar(){
-	int i = 0;
+	int i = 0, temp = loading_bar_x;
 	if(state == SYSTEM_RSET2_ALL_YES){
 		draw_rset_2();
-	}else if(state == SYSTEM_RSET_ADD_YES || state == SYSTEM_RSET_AS_YES){
+	}else if(state == SYSTEM_RSET_ADD_YES || state == SYSTEM_RSET_AS_YES || state == SYSTEM_RSET_SMEM_YES){
 		draw_rset();
 	}
 	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
@@ -1329,13 +1345,18 @@ void draw_loading_bar(){
 	Bdisp_DrawLineVRAM(18,41,107,41); //bottom horizontal line
 	Bdisp_DrawLineVRAM(18,31,18,41); //left vertical line
 	Bdisp_DrawLineVRAM(107,31,107,41); //right vertical line
-	for(i = 17; i <= loading_bar_x; i++){
+
+	if(state == SYSTEM_RSET2_ALL_YES || state == SYSTEM_RSET_AS_YES){
+		temp = round((temp*1.0f)/5.0f)*5;
+	}
+
+	for(i = 17; i <= temp; i++){
 		Bdisp_DrawLineVRAM(i, 31, i, 41);
 	}
 	if(loading_bar_x <= 106){
 		block_input = true;
 		draw_loading_square();
-		if(state == SYSTEM_RSET_ADD_YES){
+		if(state == SYSTEM_RSET_ADD_YES || state == SYSTEM_RSET_SMEM_YES){
 			loading_bar_x = 107;
 		}else{
 			loading_bar_x++;
@@ -1343,7 +1364,7 @@ void draw_loading_bar(){
 	}else{
 		KillTimer(ID_USER_TIMER1);
 		block_input = false;
-		if(state == SYSTEM_RSET2_ALL_YES){
+		if(state == SYSTEM_RSET2_ALL_YES || state == SYSTEM_RSET2_MS_YES){
 			draw_rset_2();
 		}else if(state == SYSTEM_RSET_ADD_YES || state == SYSTEM_RSET_AS_YES){
 			draw_rset();
@@ -1359,10 +1380,12 @@ void draw_loading_bar(){
 			Print("Initialize All");
 		}else if(state == SYSTEM_RSET_ADD_YES){
 			Print("Add-In");
+		}else if(state == SYSTEM_RSET_SMEM_YES){
+			Print("Storage Memories");
 		}else if(state == SYSTEM_RSET_AS_YES){
 			Print("Add-In");
 			locate(4,4);
-			Print("Storage Memory");
+			Print("Storage Memories");
 		}
 		locate(6,6);
 		Print("Press:[EXIT]");
@@ -1433,6 +1456,18 @@ void draw_rset_main(){
 	Bdisp_AllClr_DDVRAM();
 	draw_rset();
 	draw_reset_confirmed("Main Memories");
+	KillTimer(ID_USER_TIMER1);
+	block_input = false;
+	loading_bar_x = 19;
+	Bdisp_PutDisp_DD();
+}
+
+void draw_rset_ms(){
+	Bdisp_AllClr_DDVRAM();
+	draw_rset_2();
+	draw_reset_confirmed("Main Memories");
+	locate(4,4);
+	Print("Storage Memories");
 	KillTimer(ID_USER_TIMER1);
 	block_input = false;
 	loading_bar_x = 19;
@@ -1526,10 +1561,14 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 			case SYSTEM_RSET_AS:
 				draw_rset();
 				draw_popup_box("Add-in");
+				locate(4,4);
+				Print("Storage Memories");
 				break;
 			case SYSTEM_RSET2_MS:
 				draw_rset_2();
 				draw_popup_box("Main Memories");
+				locate(4,4);
+				Print("Storage Memories");
 				break;
 			case SYSTEM_RSET2_ALL:
 				draw_rset_2();
@@ -1562,31 +1601,52 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 				break;
 			case SYSTEM_RSET_SMEM_YES:
 				draw_rset();
-				draw_reset_confirmed("Storage Memories");
+				if(loading_bar_x == 99){
+					block_input = true;
+					draw_loading_square();
+					draw_loading_box();
+				}else if(loading_bar_x == 107){
+					draw_reset_confirmed("Storage Memories");
+				}
 				break;
 			case SYSTEM_RSET_AS_YES:
-				draw_rset();
-				draw_reset_confirmed("Add-In");
+				if(loading_bar_x == 19){
+					draw_loading_box();
+					block_input = true;
+				}else if(loading_bar_x == 107){
+					draw_rset();
+					draw_reset_confirmed("Add-In");
+					locate(4,4);
+					Print("Storage Memories");
+				}
 				break;
 			case SYSTEM_RSET2_MS_YES:
-				draw_rset_2();
-				draw_reset_confirmed("Main Memories");
+				if(loading_bar_x == 99){
+					draw_rset_2();
+					draw_popup_box("Main Memories");
+					locate(4,4);
+					Print("Storage Memories");
+					block_input = true;
+					draw_loading_square();
+					SetTimer(ID_USER_TIMER1, 2500, draw_rset_ms);
+				}else if(loading_bar_x == 19){
+					draw_rset_2();
+					draw_reset_confirmed("Main Memories");
+					locate(4,4);
+					Print("Storage Memories");
+				}
 				break;
 			case SYSTEM_RSET2_ALL_YES:
 				if(loading_bar_x == 19){
 					draw_loading_box();
 				}else if(loading_bar_x == 107){
-					if(state == SYSTEM_RSET2_ALL_YES){
-						draw_rset_2();
-					}
+					draw_rset_2();
 					clear_box(popup.left ,popup.top, popup.right, popup.bottom);
 					draw_box_border();
 					locate(8,2);
 					Print("Reset!");
 					locate(4,3);
-					if(state == SYSTEM_RSET2_ALL_YES){
-						Print("Initialize All");
-					}
+					Print("Initia1lize All");
 					locate(6,6);
 					Print("Press:[EXIT]");
 				}
@@ -1640,5 +1700,3 @@ int InitializeSystem(int isAppli, unsigned short OptionNum)
 {
     return INIT_ADDIN_APPLICATION(isAppli, OptionNum);
 }
-
-#pragma section
