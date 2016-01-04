@@ -215,6 +215,7 @@ typedef enum{false, true} bool;
 bool block_input = false;
 State state = MENU;
 State prevState = MENU;
+int last_two_keys[2] = {0,0};
 int cas_title[7][128] = {
 {1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,1,1,1,1,1,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1},
 {0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1,1,0,1,1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,1,0,1,1,0,1,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0},
@@ -973,21 +974,80 @@ void draw_loading_square(){
 	Bdisp_PutDisp_DD();
 }
 
-void handleKeys(){
-	key = 9999;
-	
-	if(state == OFF){
-		if(IsKeyDown(KEY_CHAR_1) && IsKeyDown(KEY_CHAR_3)){
-			draw_menu();
-			Bdisp_PutDisp_DD();
+void clear_box(int x, int y, int x2, int y2){
+	int i = 0, j = 0;
+	for(j = y; j < y2; j ++){
+		for(i = x; i < x2; i++){
+			Bdisp_SetPoint_VRAM(i,j,0); //clear point
 		}
 	}
+}
+
+void draw_box_border(){ //draws border for popup box
+	Bdisp_DrawLineVRAM(popup.left, popup.top, popup.right, popup.top); //horizontal line on top
+	Bdisp_DrawLineVRAM(popup.left, popup.top, popup.left, popup.bottom); //vertical line on left side
+	//vertical lines on right side
+	Bdisp_DrawLineVRAM(popup.right, popup.top, popup.right, popup.bottom);
+	Bdisp_DrawLineVRAM(popup.right-1, popup.top+1, popup.right-1, popup.bottom-1);
+	//horizontal lines on bottom
+	Bdisp_DrawLineVRAM(popup.left, popup.bottom, popup.right, popup.bottom);
+	Bdisp_DrawLineVRAM(popup.left+1, popup.bottom-1, popup.right-1, popup.bottom-1);
+}
+
+void draw_popup_box(char* title){ //draws popup box
+	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
+	draw_box_border();
+	locate(7,2);
+	Print("Reset OK?");
+	locate(4,3);
+	Print(title);
+	locate(6,5);
+	Print("Yes:[F1]");
+	locate(6,6);
+	Print("No :[F6]");
+}
+
+void handleKeys(){
+	key = 9999;
+	/*if(state == OFF){
+		if(IsKeyDown(KEY_CHAR_1)){
+			if(last_two_keys[0] != KEY_CHAR_1){
+				last_two_keys[1] = last_two_keys[0];
+				last_two_keys[0] = KEY_CHAR_1;
+				locate(1,1);
+				Bdisp_AllClr_DDVRAM();
+				Print("KEY_CHAR_1");
+				Bdisp_PutDisp_DD();
+			}
+		}if(IsKeyDown(KEY_CHAR_3)){
+			if(last_two_keys[0] != KEY_CHAR_3){
+				last_two_keys[1] = last_two_keys[0];
+				last_two_keys[0] = KEY_CHAR_3;
+				locate(1,2);
+				Bdisp_AllClr_DDVRAM();
+				Print("KEY_CHAR_3");
+				Bdisp_PutDisp_DD();
+			}
+		}
+		if(IsKeyDown(KEY_CTRL_AC)){
+			if(last_two_keys[0] == KEY_CHAR_3 && last_two_keys[1] == KEY_CHAR_1){
+				state = ONETHREEAC_RESET;
+			}
+		}
+		state = ONETHREEAC_RESET;
+		return;
+	}*/
 
 	Bkey_GetKeyWait(&keycode, &keycode2, KEYWAIT_HALTON_TIMEROFF, 0,1,&unused) ;
 	
 	if(state == OFF){
-		if(keycode == 1 && keycode2 == 1){
+		if(keycode == 1 && keycode2 == 1){ //AC key
 			block_input = false;
+			if(last_two_keys[0] == KEY_CHAR_3 && last_two_keys[1] == KEY_CHAR_1){
+				//state = ONETHREEAC_RESET;
+			}else{
+				//state = ONETHREEAC_RESET;
+			}
 		}
 	}
 
@@ -1329,39 +1389,6 @@ void draw_rset_2(){
 	draw_bottom_button(r_arrow,6);
 }
 
-void clear_box(int x, int y, int x2, int y2){
-	int i = 0, j = 0;
-	for(j = y; j < y2; j ++){
-		for(i = x; i < x2; i++){
-			Bdisp_SetPoint_VRAM(i,j,0); //clear point
-		}
-	}
-}
-
-void draw_box_border(){ //draws border for popup box
-	Bdisp_DrawLineVRAM(popup.left, popup.top, popup.right, popup.top); //horizontal line on top
-	Bdisp_DrawLineVRAM(popup.left, popup.top, popup.left, popup.bottom); //vertical line on left side
-	//vertical lines on right side
-	Bdisp_DrawLineVRAM(popup.right, popup.top, popup.right, popup.bottom);
-	Bdisp_DrawLineVRAM(popup.right-1, popup.top+1, popup.right-1, popup.bottom-1);
-	//horizontal lines on bottom
-	Bdisp_DrawLineVRAM(popup.left, popup.bottom, popup.right, popup.bottom);
-	Bdisp_DrawLineVRAM(popup.left+1, popup.bottom-1, popup.right-1, popup.bottom-1);
-}
-
-void draw_popup_box(char* title){ //draws popup box
-	clear_box(popup.left ,popup.top, popup.right, popup.bottom);
-	draw_box_border();
-	locate(7,2);
-	Print("Reset OK?");
-	locate(4,3);
-	Print(title);
-	locate(6,5);
-	Print("Yes:[F1]");
-	locate(6,6);
-	Print("No :[F6]");
-}
-
 void draw_memory(){
 	
 }
@@ -1585,7 +1612,7 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
     	while(1){
 
 		handleKeys();
-		if(state != RUNMAT)
+		if(state != RUNMAT && state != OFF)
 			Bdisp_AllClr_DDVRAM(); //clear screen
 
 		switch(state){
@@ -1760,6 +1787,8 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 			case OFF:
 				break;
 			case ONETHREEAC_RESET:
+				locate(1,1);
+				Print("RESET");
 				break;
 		}
 
@@ -1803,4 +1832,3 @@ int InitializeSystem(int isAppli, unsigned short OptionNum)
 }
 
 #pragma section
-
