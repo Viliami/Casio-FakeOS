@@ -769,6 +769,60 @@ int casio_logo_3[13] = {
 3100
 };
 
+int contrast_p1[13] = {
+4294967295,
+2147492389,
+2147551370,
+2148016677,
+2147551370,
+2147492389,
+4294967295,
+0,
+0,
+0,
+0,
+0,
+0
+};
+
+int contrast_p2[13] = {
+8589934591,
+2881224703,
+5887721471,
+2881220607,
+5887721471,
+2881224703,
+8589934591,
+0,
+0,
+0,
+0,
+0,
+0
+};
+
+int sys_ver_name[8] = {
+524287,
+224721,
+218263,
+87377,
+148823,
+218582,
+218576,
+524280
+};
+
+int sys_lang_menu[8] = {
+524287,
+239021,
+77229,
+173229,
+175405,
+241068,
+239024,
+524280
+};
+
 void draw_header(){
 	int x,y;
 	for(y = 0; y < 7; y++){
@@ -1150,9 +1204,11 @@ void handleKeys(){
 			}else if(state == SYSTEM_RSET2_ALL_YES){
 				prevState = MENU;
 				power_off();
+				selected_tile[selected_y][selected_x] = 0;
 				selected_x = 0;
 				selected_y = 0;
 				scroll_y = 0;
+				selected_tile[selected_y][selected_x] = 1;
 				SetTimer(ID_USER_TIMER1, 1500, draw_loading_square);
 				SetTimer(ID_USER_TIMER2, 4000, power_on);
 				
@@ -1194,7 +1250,7 @@ void handleKeys(){
 
 
 void draw_bottom_button(int pixel_array[8], int f_number){
-	int startX = 2+(20*(f_number-1));
+	int startX = 2+(21*(f_number-1));
 	draw_int_array_small(pixel_array,startX,56);
 }
 
@@ -1234,22 +1290,6 @@ void draw_system(){
 	draw_bottom_button(lang,3);
 	draw_bottom_button(ver,4);
 	draw_bottom_button(rset,5);
-}
-
-void draw_contrast(){
-
-}
-
-void draw_apo(){
-
-}
-
-void draw_lang(){
-
-}
-
-void draw_ver(){
-
 }
 
 void draw_rset(){
@@ -1403,6 +1443,9 @@ void draw_sys_contrast(){
 	Bdisp_DrawLineVRAM(2, 56, 2, 63);
 	Bdisp_DrawLineVRAM(2, 56, 21, 56); //actual border is Bdisp_DrawLineVRAM(2, 56, 21, 56)
 	PrintMini(4,58,"INIT",MINI_OVER);
+	draw_pixel_array(contrast_p1, 31,24);
+	draw_pixel_array(contrast_p2, 63,24);
+	Bdisp_DrawLineVRAM(95,24, 95, 30);
 	locate(1,1);
 	Print("Contrast");
 	locate(2,3);
@@ -1421,15 +1464,69 @@ void draw_sys_contrast(){
 }
 
 void draw_sys_pp(){
-
+	Bdisp_DrawLineVRAM(2, 56, 2, 64);
+	Bdisp_DrawLineVRAM(2, 56, 20, 56);
+	PrintMini(4,58," 10",MINI_OVER);
+	Bdisp_DrawLineVRAM(2+21, 56, 2+21, 64);
+	Bdisp_DrawLineVRAM(2+21, 56, 20+21, 56);
+	PrintMini(4+21,58," 60",MINI_OVER);
+	locate(1,1);
+	Print("Power Properties");
+	locate(1,4);
+	Print("Auto Power Off");
+	locate(12,5);
+	Print(":10 Min.");
 }
 
 void draw_sys_lang(){
+	unsigned char espanol[9] = {'E','s','p','a',0xE6, 0x2B,'o','l',0};
+	unsigned char francais[10] = {'F','r','a','n',0xE6, 0x08, 'a','i','s',0};
+	unsigned char portugues[11] = {'P','o','r','t','u','g','u',0xE6,0x0B,'s',0};
+	unsigned char sel[5] = {'S',0xE5,0x65,'L',0};
+	locate(1,1);
+	Print("Message Language");
+	locate(1,2);
+	Print("[English]");
+	locate(1,3);
+	PrintRev(" English              ");
+	locate(2,4);
+	Print(espanol);
+	locate(1,5);
+	Print(" Deutsch");
+	locate(2,6);
+	Print(francais);
+	locate(2,7);
+	Print(portugues);
+	Bdisp_DrawLineVRAM(2, 56, 2, 64);
+	Bdisp_DrawLineVRAM(2, 56, 20, 56);
+	PrintMini(5,58,"SE",MINI_OVER);
+	Bdisp_SetPoint_VRAM(12,58,1);
+	Bdisp_SetPoint_VRAM(12,62,1);
+	PrintMini(14,58,"L",MINI_OVER);
+	Bdisp_SetPoint_VRAM(17,62,1);
 
+	draw_bottom_button(sys_lang_menu, 6);
+	
 }
 
 void draw_sys_ver(){
+	locate(1,1);
+	Print("Version");
+	locate(1,2);
+	Print("OS");
+	locate(2,3);
+	Print("02.02.0201");
+	locate(1,5);
+	Print("Add-In Application");
+	locate(1,7);
+	Print("Message");
+	Bdisp_DrawLineVRAM(123,56-8,123,62-8);
+	Bdisp_SetPoint_VRAM(122,61-8,1);
+	Bdisp_SetPoint_VRAM(121,60-8,1);
+	Bdisp_SetPoint_VRAM(124,61-8,1);
+	Bdisp_SetPoint_VRAM(125,60-8,1);
 
+	draw_bottom_button(sys_ver_name,1);
 }
 
 void draw_loading_box(){
