@@ -1150,8 +1150,12 @@ void handleKeys(){
 			}else if(state == SYSTEM_RSET2_ALL_YES){
 				prevState = MENU;
 				power_off();
+				selected_x = 0;
+				selected_y = 0;
+				scroll_y = 0;
 				SetTimer(ID_USER_TIMER1, 1500, draw_loading_square);
 				SetTimer(ID_USER_TIMER2, 4000, power_on);
+				
 			}else if(state == SYSTEM_RSET || state == SYSTEM_RSET_2 || state == SYSTEM_CONTRAST || state == SYSTEM_PP || state == SYSTEM_LANG || state == SYSTEM_VER){
 				state = SYSTEM;
 			}else if(state == SYSTEM_RSET_STUP_YES){
@@ -1646,7 +1650,7 @@ int AddIn_main(int isAppli, unsigned short OptionNum){
 					locate(8,2);
 					Print("Reset!");
 					locate(4,3);
-					Print("Initia1lize All");
+					Print("Initialize All");
 					locate(6,6);
 					Print("Press:[EXIT]");
 				}
@@ -1700,3 +1704,6 @@ int InitializeSystem(int isAppli, unsigned short OptionNum)
 {
     return INIT_ADDIN_APPLICATION(isAppli, OptionNum);
 }
+
+#pragma section
+
