@@ -1,7 +1,7 @@
 # Casio-FakeOS
 A simulation of the menu for the fx-9860GII and upgraded fx-9750GII graphics calculators. It is compatible with SH4A calculators.
 
-##How To Install The Program
+## How To Install The Program
 **What you need:**
 - Casio FA-124 Program
 - Casio Fx-9860GII or an upgraded Casio Fx-9750GII
@@ -23,12 +23,12 @@ Clicking on the connect Button should bring up a few loading sequences but when 
 
 Look at the right window in the FA-124 program, instead of clicking on the button on the far left like in step 2(the "Connect" button), you are going to be clicking on the button on the far left. It is called the "Storage" button. It has a bit of green in the icon.
 
-Next you are going to drag the "FAKEOS.G1A" file into the left window, on top of the "Default" directory on the left window.
+Next, drag the "FAKEOS.G1A" file into the left window, on top of the "Default" directory on the left window.
 
 Once it is copied it should show up on the left window. Drag the "FAKEOS.G1A" file from the left window to the right window in the "Default directory". (the right window shows the programs in your calculator)
 When it is done copying click the "Disconnect" button, which is just to the right of the "Connect" button. Press exit on your calculator. Disconnect it from the calculator and the program should now appear in your menu. The icon has the words "debug".
 
-##About The Source code
+## About The Source code
 
 The menu pictures are stored in C 32-bit int arrays.
 The pixels are first converted to a binary array, and then the binary number is converted
@@ -39,5 +39,5 @@ Calculator holds little memory, which is why you can't waste memory with a 2D in
 
 The Syscalls in the header part is to implement some functionality to detect the keys that are currently pressed without waiting for input, which doesn't work in the SH4A calculators.
 
-##SCREENSHOT
+## SCREENSHOT
 ![alt tag](https://cloud.githubusercontent.com/assets/13442473/12046176/8911d780-af17-11e5-9c7e-a41645ceba97.png)
